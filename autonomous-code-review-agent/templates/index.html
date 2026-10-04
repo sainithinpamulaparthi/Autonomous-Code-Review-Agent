@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h1>Review code in seconds</h1>
+  <p class="muted">Finds bugs, security vulnerabilities and quality problems, explains each one and suggests a fix.
+  Works fully offline; SonarQube and an LLM are used automatically when available.</p>
+  {% if error %}<div class="err">{{ error }}</div>{% endif %}
+
+  <div class="tabs">
+    <button type="button" class="tab active" data-tab="demo">▶ Demo</button>
+    <button type="button" class="tab" data-tab="paste">Paste / upload code</button>
+    <button type="button" class="tab" data-tab="github">GitHub repo / PR</button>
+  </div>
+
+  <div class="panel active" id="panel-demo">
+    <p>Runs the agent on a built-in sample project full of typical mistakes. Needs no GitHub, SonarQube or LLM,
+    and is clearly labelled as a demo.</p>
+    <a class="btn" href="{{ url_for('demo') }}">Run demo review</a>
+  </div>
+
+  <form class="panel" id="panel-paste" method="post" action="{{ url_for('review_form') }}" enctype="multipart/form-data">
+    <input type="hidden" name="mode" value="paste">
+    <label for="filename">File name (sets the language, e.g. app.py or ui.js)</label>
+    <input type="text" id="filename" name="filename" value="snippet.py">
+    <label for="code">Code</label>
+    <textarea id="code" name="code" placeholder="Paste code here…"></textarea>
+    <label for="files">…or upload files</label>
+    <input type="file" id="files" name="files" multiple accept=".py,.js,.jsx,.ts,.tsx,.java,.go,.rb,.php,.cs">
+    <label class="check"><input type="checkbox" name="use_llm" checked> Use LLM explanations when available</label>
+    <button type="submit">Review code</button>
+  </form>
+
+  <form class="panel" id="panel-github" method="post" action="{{ url_for('review_form') }}">
+    <input type="hidden" name="mode" value="github">
+    <label for="target">Repository or pull request</label>
+    <input type="text" id="target" name="target" placeholder="owner/repo   or   https://github.com/owner/repo/pull/12">
+    <label class="check"><input type="checkbox" name="use_sonar" checked> Merge SonarQube issues (if configured)</label>
+    <label class="check"><input type="checkbox" name="use_llm" checked> Use LLM explanations when available</label>
+    <label class="check"><input type="checkbox" name="post_comment"> Post the summary as a PR comment (needs GITHUB_TOKEN with write access)</label>
+    <button type="submit">Review from GitHub</button>
+  </form>
+</div>
+<script>
+const tabs=document.querySelectorAll(".tab");
+tabs.forEach(t=>t.addEventListener("click",()=>{
+  tabs.forEach(x=>x.classList.toggle("active",x===t));
+  document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("active",p.id==="panel-"+t.dataset.tab));
+}));
+document.querySelectorAll("form").forEach(f=>f.addEventListener("submit",()=>{
+  const b=f.querySelector("button[type=submit]");b.disabled=true;b.textContent="Reviewing… this can take a minute with an LLM";}));
+{% if error %}document.querySelector('[data-tab="{{ 'github' if 'GitHub' in error or 'owner' in error else 'paste' }}"]').click();{% endif %}
+</script>
+{% endblock %}

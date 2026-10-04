@@ -1,0 +1,36 @@
+# docker compose up --build                  -> just the app (Demo Mode + built-in analyzer always work)
+# docker compose --profile full up --build   -> app + SonarQube + Ollama
+services:
+  app:
+    build: .
+    ports: ["5000:5000"]
+    environment:
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+      GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET:-}
+      SONAR_URL: ${SONAR_URL:-http://sonarqube:9000}
+      SONAR_TOKEN: ${SONAR_TOKEN:-}
+      SONAR_PROJECT_KEY: ${SONAR_PROJECT_KEY:-}
+      LLM_PROVIDER: ${LLM_PROVIDER:-ollama}
+      LLM_MODEL: ${LLM_MODEL:-}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    restart: unless-stopped
+
+  sonarqube:
+    image: sonarqube:community
+    profiles: ["full"]
+    ports: ["9000:9000"]
+    environment:
+      SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
+    volumes: [sonar_data:/opt/sonarqube/data, sonar_ext:/opt/sonarqube/extensions]
+
+  ollama:
+    image: ollama/ollama
+    profiles: ["full"]
+    ports: ["11434:11434"]
+    volumes: [ollama_data:/root/.ollama]
+
+volumes:
+  sonar_data:
+  sonar_ext:
+  ollama_data:

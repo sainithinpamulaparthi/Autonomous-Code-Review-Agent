@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}Autonomous Code Review Agent{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"></head>
+<body>
+<header><a href="{{ url_for('index') }}">🤖 Code Review Agent</a>
+<div class="badges" id="badges"><span class="pill">checking services…</span></div></header>
+<main>{% block content %}{% endblock %}</main>
+<footer>Autonomous Code Review Agent · static analysis + SonarQube + LLM reasoning</footer>
+<script>
+fetch("{{ url_for('health') }}").then(r=>r.json()).then(h=>{
+  const b=document.getElementById("badges");
+  const pill=(t,ok)=>`<span class="pill ${ok?'ok':'bad'}">${t}</span>`;
+  b.innerHTML=pill("Built-in analyzer",true)+pill("SonarQube "+(h.sonarqube.reachable?"online":h.sonarqube.configured?"unreachable":"not configured"),h.sonarqube.reachable)
+   +pill("LLM "+h.llm.provider+(h.llm.reachable?" online":" offline"),h.llm.reachable)+pill("GitHub token "+(h.github.token_configured?"set":"not set"),h.github.token_configured)+pill("Demo mode ready",true);
+}).catch(()=>{document.getElementById("badges").innerHTML='<span class="pill bad">status unavailable</span>'});
+</script>
+</body></html>

@@ -1,0 +1,8 @@
+flask>=3.0
+gunicorn>=22.0
+requests>=2.31
+pydantic>=2.5
+python-dotenv>=1.0
+langchain-core>=0.3
+langchain-ollama>=0.2
+langchain-openai>=0.2

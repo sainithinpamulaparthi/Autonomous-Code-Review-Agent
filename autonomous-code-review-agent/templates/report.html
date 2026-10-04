@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Review: {{ r.target }}{% endblock %}
+{% block content %}
+{% if r.simulated %}<div class="banner">⚠️ DEMO MODE: sample code with simulated SonarQube results. This is not a real review of your code.</div>{% endif %}
+<div class="card">
+  <div class="top">
+    {% set col = '#12b76a' if r.score >= 80 else ('#f79009' if r.score >= 50 else '#d92d20') %}
+    <div class="score" style="background:{{ col }}">{{ r.score }}</div>
+    <div>
+      <h1>{{ r.target }}</h1>
+      <div><strong>{{ r.verdict }}</strong></div>
+      <div class="muted">{{ r.summary }}</div>
+      <div class="muted">{{ r.mode }} · {{ r.created }} · LLM explanations: {{ 'yes' if r.llm_used else 'no (built-in rule library)' }}</div>
+    </div>
+  </div>
+  <p style="margin-top:14px">
+    <a class="btn alt" href="{{ url_for('report_json', rid=rid) }}">Download JSON</a>
+    <a class="btn alt" href="{{ url_for('report_md', rid=rid) }}">Markdown</a>
+    <a class="btn" href="{{ url_for('index') }}">New review</a></p>
+  {% if r.notes %}<ul class="notes">{% for n in r.notes %}<li>{{ n }}</li>{% endfor %}</ul>{% endif %}
+</div>
+
+<div class="card">
+  <h2>Issues ({{ r.issues|length }})</h2>
+  <div class="filters" id="filters">
+    <button class="on" data-f="ALL">All</button>
+    {% for s in ['CRITICAL','MAJOR','MINOR','INFO'] %}<button data-f="{{ s }}">{{ s.title() }} ({{ r.issues|selectattr('severity','equalto',s)|list|length }})</button>{% endfor %}
+  </div>
+  {% for i in r.issues %}
+  <details class="issue" data-sev="{{ i.severity }}">
+    <summary><span class="sev {{ i.severity }}">{{ i.severity }}</span><strong>{{ i.message }}</strong>
+      {% if i.ai_generated %}<span class="tag">AI</span>{% endif %}
+      <div class="meta">{{ i.file }}:{{ i.line }} · {{ i.category }} · {{ i.rule }} · {{ i.source }}</div></summary>
+    <div class="body">
+      {% if i.snippet %}<strong>Code</strong><pre>{{ i.snippet }}</pre>{% endif %}
+      <strong>Why it matters</strong><p>{{ i.explanation }}</p>
+      <strong>Suggested fix</strong><pre>{{ i.suggested_fix }}</pre>
+    </div>
+  </details>
+  {% else %}<p>🎉 No issues found.</p>{% endfor %}
+</div>
+<script>
+document.querySelectorAll("#filters button").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll("#filters button").forEach(x=>x.classList.toggle("on",x===b));
+  document.querySelectorAll("details.issue").forEach(d=>d.style.display=(b.dataset.f==="ALL"||d.dataset.sev===b.dataset.f)?"":"none");
+}));
+</script>
+{% endblock %}
